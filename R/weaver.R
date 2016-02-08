@@ -1,142 +1,24 @@
-### Inputs
-Weaver.input.validate <-
-# Validates input dimensions
-function(a,b,tDe){
-  stopifnot("matrix" == class(tDe));
-  stopifnot("numeric" == mode(tDe));
-  stopifnot("numeric" == mode(a));
-  stopifnot("numeric" == mode(b));
-  stopifnot((ncol(tDe) == length(a)) && (nrow(tDe) == length(b)));
-}
-
-## Converter for adjacency matrix input format
-Weaver.matrix <-
-function(A){
-  #validate A
-  Weaver.input.validate.matrix(A);
-  #convert A
-  input = Weaver.input.matrix(A);
-  #basic weaver
-  WeaverBas(input$a,input$b,input$tDe)
-  #superposed weaver
-}
-
-Weaver.input.validate.matrix <-
-# validate certain features in the adjacency matrix input
-function(A){
-  nr = nrow(A);
-  nc = ncol(A);
-  #stops
-  stopifnot(nr >= 2);
-  stopifnot(nr == nc);
-  stopifnot(all(diag(A) == 0));
-  
-  #warnings
-  if(any(A < 0)){
-    warning('Negative element detected in the adj. mat. input')
-  }  
-  #potentially validate strong connectivity
-}
-
-Weaver.input.matrix <-
-# converts adjacency matrix input to list(a,b,tDe)
-function(A){
-  n = nrow(A);
-  rslt = list();
-  rslt$a = drop(A %*% rep(1, n));
-  b = double(n * (n - 1) / 2);
-  De = integer(n * n * (n - 1) / 2);
-  nb = 0;
-  for(i in seq(2,n)){
-    for(j in seq(1,i-1)){
-      s = A[j,i] + A[i,j];
-      if( s > 0 ){        
-        b[nb + 1] = -s;
-        De[nb * n + i] = 1L;
-        De[nb * n + j] = 1L;
-        nb = nb + 1;
-      }
-    }
-  }
-  if(nb == 0){
-    rslt$b = 0;
-    rslt$tDe = t(rep(0L,n));
-  }else{
-    rslt$b = b[1:nb];
-    rslt$tDe = matrix(De[1:(n * nb)], 
-              ncol = n, byrow = TRUE);
-  }
-  rslt
-}
-
-## Special input converters
-Weaver.Examples.Hunter2004PL.ConvertInput <-
-function(txt="http://sites.stat.psu.edu/~dhunter/code/btmatlab/nascar2002.txt",hasHeader=TRUE){  
-	dat = read.table(file=txt, header=hasHeader)
-	nb = nrow(dat);
-	nrace = 36; # being lazy
-	ndriver = 83; # being lazy
-	nsizes = tabulate(dat$Race);
-	rslt = list();
-	rslt$b = rep(-1,nb);  # b is always -1
-	a = integer(ndriver);
-	tDe = matrix(integer(nb * ndriver),ncol=ndriver);
-	ib = 0;
-	for(r in 1:nrace){
-		nsize = nsizes[r];
-		for(i in 1:nsize){
-			a[dat$DriverID[ib+i]] = a[dat$DriverID[ib+i]] + 1;
-			for(j in i:nsize){
-				tDe[ib+i,dat$DriverID[ib+j]] = 1;
-			}
-		}
-		ib = ib + nsize;
-	}
-	rslt$a = drop(a);
-	rslt$tDe = tDe;
-	rslt
-}
-
-Weaver.Examples.Hankin2010Volleyball.ConvertInput <-
-function(n = 9){
-  require("hyperdirichlet");
-  data(volleyball);
-  tDe = binmat(n);
-  ida = tDe %*% rep(1,n) == 1L;
-  b = powers(vb_synthetic);  
-  a = rev(b[ida]);
-  idb = !ida;
-  
-  idb[1] = FALSE; # the row has all 0
-  idb[length(idb)] = FALSE; # the row has all 1
-  idb[b == 0] = FALSE; # remove those b=0 cases
-  b = b[idb];
-  tDe = tDe[idb,];
-  
-  list(a=a,b=b,tDe=tDe)
-}
-
 Weaver <-
 function(a,b,tDe, tol=1e-10,maxit=500,iteration=FALSE,ini=-1, PriorThickness=0){
   env=environment()
   res = NULL
   tryCatch({
-    env$res=WeaverBas(a,b,tDe,tol=tol,maxit=maxit)
+    env$res=weaver.vanilla(a,b,tDe,tol=tol,maxit=maxit)
   },error = function(err){
     tryCatch({
-      env$res=WeaverGre(a,b,tDe,tol=tol,maxit=maxit)
+      env$res=weaver.greedy(a,b,tDe,tol=tol,maxit=maxit)
     }, error = function(err){
-      env$res=WeaverBayes(a,b,tDe,tol=tol,maxit=maxit,PriorThickness=PriorThickness)
+      env$res=weaver.bayes(a,b,tDe,tol=tol,maxit=maxit,PriorThickness=PriorThickness)
     })
   })
   if(is.null(env$res) || is.nan(env$res$iter$lnLik)){
-    env$res = WeaverBayes(a,b,tDe,tol=tol,maxit=maxit,PriorThickness=PriorThickness)
+    env$res = weaver.bayes(a,b,tDe,tol=tol,maxit=maxit,PriorThickness=PriorThickness)
   }
   env$res
 }
 
 # Algorithms
-WeaverBas <-
+weaver.vanilla <-
 # This function implements the Basic Weaver Algorithm
 function(a,b,tDe,listinput, tol=1e-10,maxit=500,iteration=FALSE,ini=-1){
   if(!missing(listinput)){
@@ -212,23 +94,7 @@ function(a,b,tDe,listinput, tol=1e-10,maxit=500,iteration=FALSE,ini=-1){
   
 }
 
-initWeaver <-
-function(a,b,tDe,listinput,PriorThickness=0){
-  if(!missing(listinput)){
-    a = listinput$a;
-    b = listinput$b;
-    tDe = t(listinput$De);
-  }
-  if(PriorThickness == 0){
-    PriorThickness = (sum(abs(b))) * (sum(abs(b))) / ((sum(abs(a))) + 1)
-  }
-  m1 = sum(a) + sum(b)
-  m2 = m1 + PriorThickness * length(a)
-  res = WeaverBayes(a,b,tDe,PriorThickness = PriorThickness,tol = 1/(length(a)^2), maxit=50,iteration=FALSE, ini=rep(1/length(a),length(a)))
-  list(ini=res$x, guesssoln=(x * m2 - PriorThickness) / m1,PriThi=PriorThickness, res$iter$count)
-}
-
-WeaverBayes <-
+weaver.bayes <-
 # This function implemnets the Superposed Weaver Algorithm
 function(a,b,tDe,listinput,PriorThickness=0,tol=1e-10, maxit=10000,iteration=FALSE,ini=-1){
   if(!missing(listinput)){
@@ -258,15 +124,15 @@ function(a,b,tDe,listinput,PriorThickness=0,tol=1e-10, maxit=10000,iteration=FAL
     PriorThickness = (sum(abs(b))) * (sum(abs(b))) / ((sum(abs(a))) + 1) * 10
   }
   iterCount = 0;
-  iterCountWeaverBayes = 0;
+  iterCountweaver.bayes = 0;
   if(iteration){
     iter=list();
   }
   
   while(e > tol && iterCount <= maxit){
-    xnew = WeaverBas(a + x * PriorThickness,b,tDe,tol=tol,iteration=iteration, ini = a + x * PriorThickness);
+    xnew = weaver.vanilla(a + x * PriorThickness,b,tDe,tol=tol,iteration=iteration, ini = a + x * PriorThickness);
     iterCount = iterCount + xnew$iter$count;
-    iterCountWeaverBayes = iterCountWeaverBayes + 1;
+    iterCountweaver.bayes = iterCountweaver.bayes + 1;
     if(iteration){
       lnLikOffset = -sum(x * PriorThickness * log(x))
       if(length(iter) == 0){
@@ -295,16 +161,16 @@ function(a,b,tDe,listinput,PriorThickness=0,tol=1e-10, maxit=10000,iteration=FAL
   e = sum(abs(xnew - x));
   x = xnew;
   if(iteration){
-    iter$count = list(Weaver=iterCount,WeaverBayes=iterCountWeaverBayes);
+    iter$count = list(Weaver=iterCount,weaver.bayes=iterCountweaver.bayes);
   }else{
     iter = list(
-      count=list(Weaver=iterCount,WeaverBayes=iterCountWeaverBayes),
+      count=list(Weaver=iterCount,weaver.bayes=iterCountweaver.bayes),
       lnLik = sum(a * log(x)) + sum(b * log(tDe %*% x)));
   }
   list(x=x,iter=iter, prithi=PriorThickness)
 }
 
-WeaverGre <-
+weaver.greedy <-
 # This function implements the Greedy Weaver Algorithm
 function(a,b,tDe,listinput,tol=1e-10,maxit=500,iteration=FALSE,ini=-1){
   if(!missing(listinput)){
@@ -314,7 +180,7 @@ function(a,b,tDe,listinput,tol=1e-10,maxit=500,iteration=FALSE,ini=-1){
   }
   m = sum(a) + sum(b);
   if(any(ini <= 0)){
-    x = WeaverBayes(a,b,tDe,tol=0.1)$x;
+    x = weaver.bayes(a,b,tDe,tol=0.1)$x;
   }else{
     x = ini / sum(ini);
   }
@@ -384,16 +250,4 @@ function(a,b,tDe,listinput,tol=1e-10,maxit=500,iteration=FALSE,ini=-1){
   }
   
   list(x=x,iter=iter)
-}
-
-imm <-
-function(p,a,b,De,listInput, logscale=TRUE){
-  if(!missing(listInput)){
-    a = listInput$a;
-    b = listInput$b;
-    De = listInput$De;
-  }
-  p = p / sum(p)
-  loglik = sum(a * log(p)) + sum(b * log(drop(t(p) %*% De)))
-  ifelse(logscale, loglik, exp(loglik))
 }
