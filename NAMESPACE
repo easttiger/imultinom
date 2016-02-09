@@ -1,1 +1,2 @@
 # to make package functions available use export(functionName1, functionName2, ...)
+exportPattern("^[^\\.]")

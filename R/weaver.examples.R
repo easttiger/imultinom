@@ -1,10 +1,9 @@
-
 ## Special input converters
 Weaver.Examples.Hunter2004PL.ConvertInput <-
 function(){
-    dat = read.table(file="http://sites.stat.psu.edu/~dhunter/code/btmatlab/nascar2002.txt", header=T)
-    #data(nascar2002_rawdata)
-    #dat = nascar2002_rawdata
+  #dat = read.table(file="http://sites.stat.psu.edu/~dhunter/code/btmatlab/nascar2002.txt", header=T)
+  data(nascar2002_rawdata)
+  dat = nascar2002_rawdata
 
 	nb = nrow(dat);
 	nrace = 36; # being lazy
@@ -32,15 +31,10 @@ function(){
 
 Weaver.Examples.Hankin2010Volleyball.ConvertInput <-
 function(){
-  if(require("hyperdirichlet")){
-    data(volleyball)
-    tDe = binmat(9)
-    b = powers(vb_synthetic)
-  }else{
-    data(vb_synthetic_df)
-    tDe = as.matrix(vb_synthetic_df[,1:9])
-    b = vb_synthetic_df$powers
-  }
+
+  data(vb_synthetic_df)
+  tDe = as.matrix(vb_synthetic_df[,1:9])
+  b = vb_synthetic_df$powers
 
   ida = tDe %*% rep(1,9) == 1L;
   a = rev(b[ida]);
@@ -51,5 +45,6 @@ function(){
   idb[b == 0] = FALSE; # remove those b=0 cases
   b = b[idb];
   tDe = tDe[idb,];
+
   list(a=a,b=b,De=t(tDe))
 }
