@@ -1,3 +1,3 @@
 This repository hosts development history of the R pakcage imultinom.
 The following R command installs the package from the local source folder.
-install.packages("E:/Dropbox/GitHub/imultinom",repos=NULL,type="source")
+install.packages("%parant_folder%/imultinom",repos=NULL,type="source")
