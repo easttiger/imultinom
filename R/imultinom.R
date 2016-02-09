@@ -10,27 +10,27 @@ function(listInput,matrixInput,a,b,De){
 		a  = listInput$a
 		b  = listInput$b
 		De = listInput$De
-	}else if(!missing(matrixInput)){		
-		.matrix.input.validate(matrixInput)		
+	}else if(!missing(matrixInput)){
+		.matrix.input.validate(matrixInput)
 		listInput = .input.matrix(matrixInput)
 		a  = listInput$a
 		b  = listInput$b
-		De = t(listInput$tDe)		
+		De = t(listInput$tDe)
 	}
-	
+
 	stopifnot("matrix" == class(De))
-	stopifnot("numeric" == class(a))
-	stopifnot("numeric" == class(b))
+	stopifnot("numeric" == mode(a))
+	stopifnot("numeric" == mode(b))
 	stopifnot(length(a) >  1L)
 	stopifnot(length(b) >= 1L)
 	stopifnot((nrow(De) == length(a)) && (ncol(De) == length(b)))
 	stopifnot(all(a >= 0))
-	
+
 	new("imultinom",a=a,b=b,De=De)
 }
 
 setGeneric("likelihood",function(x, p,logscale=FALSE){standardGeneric("likelihood")})
-setMethod("likelihood", signature="imultinom", 
+setMethod("likelihood", signature="imultinom",
 function(x, p,logscale){
   p = p / sum(p)
   loglik = sum(x@a * log(p)) + sum(x@b * log(drop(t(p) %*% x@De)))
@@ -38,7 +38,7 @@ function(x, p,logscale){
 })
 
 setGeneric("mle",function(x){standardGeneric("mle")})
-setMethod("mle", signature="imultinom", 
+setMethod("mle", signature="imultinom",
 function(x){
 	Weaver(x@a,x@b,t(x@De))
 })
@@ -52,11 +52,11 @@ function(A){
   stopifnot(nr >= 2);
   stopifnot(nr == nc);
   stopifnot(all(diag(A) == 0));
-  
+
   #warnings
   if(any(A < 0)){
     warning('Negative element detected in the adj. mat. input')
-  }  
+  }
   #potentially validate strong connectivity
 }
 
@@ -72,7 +72,7 @@ function(A){
   for(i in seq(2,n)){
     for(j in seq(1,i-1)){
       s = A[j,i] + A[i,j];
-      if( s > 0 ){        
+      if( s > 0 ){
         b[nb + 1] = -s;
         De[nb * n + i] = 1L;
         De[nb * n + j] = 1L;
@@ -85,7 +85,7 @@ function(A){
     rslt$tDe = t(rep(0L,n));
   }else{
     rslt$b = b[1:nb];
-    rslt$tDe = matrix(De[1:(n * nb)], 
+    rslt$tDe = matrix(De[1:(n * nb)],
               ncol = n, byrow = TRUE);
   }
   rslt

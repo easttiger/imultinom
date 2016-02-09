@@ -38,7 +38,7 @@ function(a,b,tDe,listinput, tol=1e-10,maxit=500,iteration=FALSE,ini=-1){
     x = ini;
   }
   x = x / sum(x);
-  
+
   iterCount = 0;
   if(iteration){
     lena = length(a);
@@ -51,49 +51,42 @@ function(a,b,tDe,listinput, tol=1e-10,maxit=500,iteration=FALSE,ini=-1){
     if(iteration){
       iter$path[iterCount * lena + 1:lena] = drop(x);
       iter$lnLik[iterCount+1] = sum(a * log(x)) + sum(b * log(tDe %*% x));
-      
+
     }
     iterCount = iterCount + 1;
-    
+
     tau = b / (tDe %*% x);
     tau0 = m - sum(tau)
     xnew = drop(a / t(tau0 + t(tau) %*% (1L - tDe)));
-    
-    #if(any(xnew <= 0)){
-      #(-x[xnew <=0])  /  (xnew[xnew <= 0] - x[xnew <= 0]) 
-    #  k = min(1 /  (1 - xnew[xnew <= 0] / x[xnew <= 0]))
-    #  k = k / 3
-    #  xnew = x + k * (xnew - x)
-    #}
+
     stopifnot(all(xnew >= 0));
-    #xnew[xnew <= 0] = 0.01
-    
+
+
     xnew = xnew / sum(xnew);
-    #e = sqrt(sum((a - x / sum(x) * drop(t(tau0 + t(tau) %*% (1L - tDe))))^2));
-    e = sum(abs(x - xnew))
-    #x = sapply(xnew,function(x)max(x,1e-16))
+    e = sqrt(sum((a - x / sum(x) * drop(t(tau0 + t(tau) %*% (1L - tDe))))^2));
+    #e = sum(abs(x - xnew)) #another error function
     x = xnew
-    
+
     if(iterCount > maxit){
       warning("maxit reached");
     }
-    
+
   }
-  
+
   if(iteration){
-    # trim 
+    # trim
     iter$path = matrix(iter$path[1:(lena * iterCount)], ncol=lena, byrow = TRUE);
     iter$lnLik = iter$lnLik[1:iterCount];
     iter$count = iterCount;
-    
+
   }else{
     iter=list(
       count=iterCount,
       lnLik = sum(a * log(x)) + sum(b * log(tDe %*% x)));
   }
-  
+
   list(x=x,iter=iter,e=e,obsinfomat=cov.of.mle(x,a,b,t(tDe)))
-  
+
 }
 
 weaver.bayes <-
@@ -117,9 +110,9 @@ function(a,b,tDe,listinput,PriorThickness=0,tol=1e-10, maxit=10000,iteration=FAL
   }else{
     x = ini;
   }
-  
+
   x = x / sum(x);
-  
+
   if(any(x <= 0)) x = 1.0 / length(a);
   e = 1e10;
   if(PriorThickness == 0){
@@ -130,7 +123,7 @@ function(a,b,tDe,listinput,PriorThickness=0,tol=1e-10, maxit=10000,iteration=FAL
   if(iteration){
     iter=list();
   }
-  
+
   while(e > tol && iterCount <= maxit){
     xnew = weaver.vanilla(a + x * PriorThickness,b,tDe,tol=tol,iteration=iteration, ini = a + x * PriorThickness);
     iterCount = iterCount + xnew$iter$count;
@@ -143,7 +136,7 @@ function(a,b,tDe,listinput,PriorThickness=0,tol=1e-10, maxit=10000,iteration=FAL
         iter$path = rbind(iter$path, xnew$iter$path);
         iter$lnLik = c(iter$lnLik, xnew$iter$lnLik + lnLikOffset);
       }
-            
+
     }
     xnew = xnew$x;
     stopifnot(all(xnew >= 0));
@@ -151,14 +144,14 @@ function(a,b,tDe,listinput,PriorThickness=0,tol=1e-10, maxit=10000,iteration=FAL
     #tau0 = sum(a) + sum(b) - sum(tau)
     #e = sqrt(sum((xnew * drop(tau0 + t(tau) %*% (1L - tDe)))^2))
     e = sum(abs(x - xnew))
-    
+
     x = sapply(xnew, function(x)max(x,1e-16))
-    
+
     if(iterCount > maxit){
       warning("maxit reached");
     }
   }
-  
+
   stopifnot(all(xnew >= 0));
   e = sum(abs(xnew - x));
   x = xnew;
@@ -200,10 +193,10 @@ function(a,b,tDe,listinput,tol=1e-10,maxit=500,iteration=FALSE,ini=-1){
   while(e > tol && iterCount <= maxit){
     if(iteration){
       iter$path[iterCount * lena + 1:lena] = drop(x);
-      iter$lnLik[iterCount+1] = sum(a * log(x)) + sum(b * log(tDe %*% x));      
+      iter$lnLik[iterCount+1] = sum(a * log(x)) + sum(b * log(tDe %*% x));
     }
     iterCount = iterCount + 1;
-    
+
     tau = b / (tDe %*% x);
     tau0 = m - sum(tau);
     d = drop(x * (tau0 + t(1 - tDe) %*% tau) - a);
@@ -233,24 +226,24 @@ function(a,b,tDe,listinput,tol=1e-10,maxit=500,iteration=FALSE,ini=-1){
       xnew[length(xnew)] = 1 - sum(xnew);
     }
     stopifnot(all(xnew >= 0));
-    
+
     x = xnew;
     if(iterCount > maxit){
       warning("maxit reached");
     }
   }
   if(iteration){
-    # trim 
+    # trim
     iter$path = matrix(iter$path[1:(lena * iterCount)], ncol=lena, byrow = TRUE);
     iter$lnLik = iter$lnLik[1:iterCount];
     iter$count = iterCount;
-    
+
   }else{
     iter=list(
       count=iterCount,
       lnLik = sum(a * log(x)) + sum(b * log(tDe %*% x)));
   }
-  
+
   list(x=x,iter=iter,e=e,obsinfomat=cov.of.mle(x,a,b,t(tDe)))
 }
 
@@ -275,8 +268,8 @@ Weaver.input.validate <-
 # Validates input dimensions
 function(a,b,tDe){
   stopifnot("matrix" == class(tDe));
-  stopifnot("numeric" == class(a));
-  stopifnot("numeric" == class(b));
+  stopifnot("numeric" == mode(a));
+  stopifnot("numeric" == mode(b));
   stopifnot((ncol(tDe) == length(a)) && (nrow(tDe) == length(b)));
 }
 

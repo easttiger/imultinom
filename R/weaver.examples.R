@@ -1,8 +1,11 @@
 
 ## Special input converters
 Weaver.Examples.Hunter2004PL.ConvertInput <-
-function(txt="http://sites.stat.psu.edu/~dhunter/code/btmatlab/nascar2002.txt",hasHeader=TRUE){  
-	dat = read.table(file=txt, header=hasHeader)
+function(){
+    dat = read.table(file="http://sites.stat.psu.edu/~dhunter/code/btmatlab/nascar2002.txt", header=T)
+    #data(nascar2002_rawdata)
+    #dat = nascar2002_rawdata
+
 	nb = nrow(dat);
 	nrace = 36; # being lazy
 	ndriver = 83; # being lazy
@@ -28,20 +31,25 @@ function(txt="http://sites.stat.psu.edu/~dhunter/code/btmatlab/nascar2002.txt",h
 }
 
 Weaver.Examples.Hankin2010Volleyball.ConvertInput <-
-function(n = 9){
-  require("hyperdirichlet");
-  data(volleyball);
-  tDe = binmat(n);
-  ida = tDe %*% rep(1,n) == 1L;
-  b = powers(vb_synthetic);  
+function(){
+  if(require("hyperdirichlet")){
+    data(volleyball)
+    tDe = binmat(9)
+    b = powers(vb_synthetic)
+  }else{
+    data(vb_synthetic_df)
+    tDe = as.matrix(vb_synthetic_df[,1:9])
+    b = vb_synthetic_df$powers
+  }
+
+  ida = tDe %*% rep(1,9) == 1L;
   a = rev(b[ida]);
   idb = !ida;
-  
+
   idb[1] = FALSE; # the row has all 0
   idb[length(idb)] = FALSE; # the row has all 1
   idb[b == 0] = FALSE; # remove those b=0 cases
   b = b[idb];
   tDe = tDe[idb,];
-  
   list(a=a,b=b,De=t(tDe))
 }
