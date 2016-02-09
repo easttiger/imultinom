@@ -89,7 +89,7 @@ function(a,b,tDe,listinput, tol=1e-10,maxit=500,iteration=FALSE,ini=-1){
       lnLik = sum(a * log(x)) + sum(b * log(tDe %*% x)));
   }
 
-  list(x=x,iter=iter,e=e,obsinfomat=cov.of.mle(x,a,b,t(tDe)))
+  list(x=x,iter=iter,e=e,covmle=cov.of.mle(x,a,b,t(tDe)))
 
 }
 
@@ -166,7 +166,7 @@ function(a,b,tDe,listinput,PriorThickness=0,tol=1e-10, maxit=10000,iteration=FAL
       count=list(Weaver=iterCount,weaver.bayes=iterCountweaver.bayes),
       lnLik = sum(a * log(x)) + sum(b * log(tDe %*% x)));
   }
-  list(x=x,iter=iter, e=e, prithi=PriorThickness,obsinfomat=cov.of.mle(x,a,b,t(tDe)))
+  list(x=x,iter=iter, e=e, prithi=PriorThickness,covmle=cov.of.mle(x,a,b,t(tDe)))
 }
 
 weaver.greedy <-
@@ -248,7 +248,7 @@ function(a,b,tDe,listinput,tol=1e-10,maxit=500,iteration=FALSE,ini=-1){
       lnLik = sum(a * log(x)) + sum(b * log(tDe %*% x)));
   }
 
-  list(x=x,iter=iter,e=e,obsinfomat=cov.of.mle(x,a,b,t(tDe)))
+  list(x=x,iter=iter,e=e,covmle=cov.of.mle(x,a,b,t(tDe)))
 }
 
 ## Interface functions
