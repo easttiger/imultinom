@@ -1,39 +1,28 @@
-\name{imultinom}
-\alias{imultinom}
+\name{mle}
+\alias{mle}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 %%  ~~function to do ... ~~
-  imultinom S4 object constructor
+  Maximum Likelihood Estimation of Incomplete Multinomial Model
 }
 \description{
-Constructs an imultinom S4 object
+  Find the Maximum Likelihood Estimate and its Asymptotic Covariance of an imultinom S4 object
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
 }
 \usage{
-imultinom(listInput, matrixInput, a, b, De)
+  mle(x)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{listInput}{
+  \item{x}{
 %%     ~~Describe \code{listInput} here~~
-  This is a list in the shape of list(a = numeric vector, b = numeric vector, De = 0-1 matrix). If supplied, all subsequent inputs will be ignored.
+  This is an imultinom S4 object. The function also reads the following global options for iteration related settings. \cr
+  getOption("tolerance"), can be set by options(tolerance=1e-15), if you want a finer tolerance other than the default 1e-10 \cr
+  getOption("iterrec"), can be set by options(iterrec = TRUE) if you want to turn on iteration recording. \cr
+  getOption("maxit"), can be set by options(maxit=1000) if the default 500 maximum iteration steps is insufficient. \cr
+  getOption("PriorThickness"), can be set by options(PriorThickness=1000). This parameter is only for weaver.bayes, and it requires some skills to set. \cr
 }
-  \item{matrixInput}{
-%%     ~~Describe \code{matrixInput} here~~
-  Input in adjacency matrix format. Precedence is after list input. If supplied, all subsequent inputs will be ignored.
-}
-  \item{a}{
-%%     ~~Describe \code{a} here~~
-  Individual input of the complete data exponents as a numeric vector. When using this input, make sure both listInput and matrixInput are not supplied.
-}
-  \item{b}{
-%%     ~~Describe \code{b} here~~
-  Individual input of the composite data exponents as a numeric vector. When using this input, make sure both listInput and matrixInput are not supplied.
-}
-  \item{De}{
-%%     ~~Describe \code{De} here~~
-  Individual input of the subset pattern indicator matrix as a 0-1 matrix (class matrix, mode numeric). Requires: nrow = length(a), ncol = length(b). When using this input, make sure both listInput and matrixInput are not supplied.
-}
+
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
@@ -44,7 +33,7 @@ imultinom(listInput, matrixInput, a, b, De)
 %%  \item{comp1 }{Description of 'comp1'}
 %%  \item{comp2 }{Description of 'comp2'}
 %% ...
-  Returns an S4 object having 3 slots: @a, @b, @De
+  Returns $x as the MLE, $obs.info.mat as the asymptotic covariance matrix of the MLE, along with other iteration details.
 }
 \references{
 %% ~put references to the literature/web site here ~

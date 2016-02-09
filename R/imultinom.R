@@ -40,7 +40,7 @@ function(x, p,logscale){
 setGeneric("mle",function(x){standardGeneric("mle")})
 setMethod("mle", signature="imultinom",
 function(x){
-	Weaver(x@a,x@b,t(x@De))
+	Weaver(x@a,x@b,t(x@De),tol = getOption("tolerance"), iteration = getOption("iterrec"),maxit = getOption("maxit"),PriorThickness = getOption("PriorThickness"))
 })
 
 ".matrix.input.validate" <-

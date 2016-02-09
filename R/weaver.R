@@ -3,17 +3,21 @@ function(a,b,tDe, tol=1e-10,maxit=500,iteration=FALSE,ini=-1, PriorThickness=0){
   Weaver.input.validate(a,b,tDe)
   env=environment()
   res = NULL
+  if(!is.logical(iteration)) iteration = FALSE
+  if(is.null(maxit)){maxit = 500}
+  if(is.null(PriorThickness)){PriorThickness = 0}
+  if(is.null(tol)){tol = 1e-10}
   tryCatch({
-    env$res=weaver.vanilla(a,b,tDe,tol=tol,maxit=maxit)
+    env$res=weaver.vanilla(a,b,tDe,tol=tol,maxit=maxit,iteration = iteration)
   },error = function(err){
     tryCatch({
-      env$res=weaver.greedy(a,b,tDe,tol=tol,maxit=maxit)
+      env$res=weaver.greedy(a,b,tDe,tol=tol,maxit=maxit,iteration = iteration)
     }, error = function(err){
-      env$res=weaver.bayes(a,b,tDe,tol=tol,maxit=maxit,PriorThickness=PriorThickness)
+      env$res=weaver.bayes(a,b,tDe,tol=tol,maxit=maxit,PriorThickness=PriorThickness,iteration = iteration)
     })
   })
   if(is.null(env$res) || is.nan(env$res$iter$lnLik)){
-    env$res = weaver.bayes(a,b,tDe,tol=tol,maxit=maxit,PriorThickness=PriorThickness)
+    env$res = weaver.bayes(a,b,tDe,tol=tol,maxit=maxit,PriorThickness=PriorThickness,iteration = iteration)
   }
   env$res
 }
