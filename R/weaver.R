@@ -1,5 +1,6 @@
 Weaver <-
 function(a,b,tDe, tol=1e-10,maxit=500,iteration=FALSE,ini=-1, PriorThickness=0){
+  Weaver.input.validate(a,b,tDe)
   env=environment()
   res = NULL
   tryCatch({
@@ -90,7 +91,8 @@ function(a,b,tDe,listinput, tol=1e-10,maxit=500,iteration=FALSE,ini=-1){
       count=iterCount,
       lnLik = sum(a * log(x)) + sum(b * log(tDe %*% x)));
   }
-  list(x=x,iter=iter,e=e)
+  
+  list(x=x,iter=iter,e=e,obsinfomat=cov.of.mle(x,a,b,t(tDe)))
   
 }
 
@@ -167,7 +169,7 @@ function(a,b,tDe,listinput,PriorThickness=0,tol=1e-10, maxit=10000,iteration=FAL
       count=list(Weaver=iterCount,weaver.bayes=iterCountweaver.bayes),
       lnLik = sum(a * log(x)) + sum(b * log(tDe %*% x)));
   }
-  list(x=x,iter=iter, prithi=PriorThickness)
+  list(x=x,iter=iter, e=e, prithi=PriorThickness,obsinfomat=cov.of.mle(x,a,b,t(tDe)))
 }
 
 weaver.greedy <-
@@ -249,5 +251,59 @@ function(a,b,tDe,listinput,tol=1e-10,maxit=500,iteration=FALSE,ini=-1){
       lnLik = sum(a * log(x)) + sum(b * log(tDe %*% x)));
   }
   
-  list(x=x,iter=iter)
+  list(x=x,iter=iter,e=e,obsinfomat=cov.of.mle(x,a,b,t(tDe)))
+}
+
+## Interface functions
+initWeaver <-
+function(a,b,tDe,listinput,PriorThickness=0){
+  if(!missing(listinput)){
+    a = listinput$a;
+    b = listinput$b;
+    tDe = t(listinput$De);
+  }
+  if(PriorThickness == 0){
+    PriorThickness = (sum(abs(b))) * (sum(abs(b))) / ((sum(abs(a))) + 1)
+  }
+  m1 = sum(a) + sum(b)
+  m2 = m1 + PriorThickness * length(a)
+  res = weaver.bayes(a,b,tDe,PriorThickness = PriorThickness,tol = 1/(length(a)^2), maxit=50,iteration=FALSE, ini=rep(1/length(a),length(a)))
+  list(ini=res$x, guesssoln=(x * m2 - PriorThickness) / m1,PriThi=PriorThickness, res$iter$count)
+}
+
+Weaver.input.validate <-
+# Validates input dimensions
+function(a,b,tDe){
+  stopifnot("matrix" == class(tDe));
+  stopifnot("numeric" == class(a));
+  stopifnot("numeric" == class(b));
+  stopifnot((ncol(tDe) == length(a)) && (nrow(tDe) == length(b)));
+}
+
+
+obs.info.mat <-
+function(p,a,b,De){
+	d = length(p)
+	q = length(b)
+	J = cbind(diag(rep(1,d-1)),rep(-1,d-1))
+	dDe = J %*% De
+	tDep2 = as.vector((t(De) %*% as.vector(p)))^2
+	psi = matrix(double((d-1)^2),nrow=d-1)
+	for(i in 1:(d-1)){
+	  for(k in i:(d-1)){
+		psi[i,k] = sum(b * dDe[i,] * dDe[k,] / tDep2)
+		if(i != k) psi[k,i] = psi[i,k]
+	  }
+	}
+	diag((a / (p^2))[-d]) + a[d] / (p[d]^2) + psi
+}
+
+cov.of.mle <-
+function(p,a,b,De){
+	covExLast <- solve(obs.info.mat(p,a,b,De))
+	covOfLast <- as.vector(-apply(covExLast,1,sum))
+	varOfLast <- sum(covExLast)
+	cov.of.mle <- rbind(cbind(covExLast,covOfLast),cbind(t(covOfLast),varOfLast))
+	dimnames(cov.of.mle) <- NULL
+	cov.of.mle
 }

@@ -1,5 +1,5 @@
-setwd("E:/Dropbox/Subjects/W/Weaver Paper Reading list/Real Data Examples")
-cat(paste('Current dir is : ', getwd(), '\n'))
+# setwd("E:/Dropbox/Subjects/W/Weaver Paper Reading list/Real Data Examples")
+source("weaver.R")
 RUN_PARALLEL = T
 library(snow)
 m=1;
@@ -112,19 +112,19 @@ mleSim <-
     #  res = matrix(double(d * samplesize), nrow=d)
     #  for(i in 1:samplesize){
     #    lik=g(p,R);
-    #    res[,i] = as.vector(weaver.bayes(lik$a,lik$b,t(lik$De),PriorThickness = prithick, maxit = maxiter)$x);
+    #    res[,i] = as.vector(WeaverBayes(lik$a,lik$b,t(lik$De),PriorThickness = prithick, maxit = maxiter)$x);
     #  }
     if(ncluster > 1){
       require(snow)
       #stopCluster(cl)
       cl <- makeSOCKcluster(rep("localhost",ncluster))
       clusterExport(cl, list("p","d","R"), envir = sys.frame(sys.nframe()))
-      clusterExport(cl, list("randparti","incComplete","Weaver","weaver.bayes","weaver.vanilla","weaver.greedy","initWeaver","g","m"), envir = .GlobalEnv)
+      clusterExport(cl, list("randparti","incComplete","Weaver","WeaverBayes","WeaverBas","WeaverGre","initWeaver","g","m"), envir = .GlobalEnv)
       
       phat = parSapply(cl, 1:samplesize, function(x){
         lik=g(p,R,includeCompleteData = incComplete);
         if(m * 1.7^R >=d){
-          weaver.vanilla(lik$a,lik$b,t(lik$De))$x
+          WeaverBas(lik$a,lik$b,t(lik$De))$x
         }else{
           Weaver(lik$a,lik$b,t(lik$De))$x
         }
@@ -135,7 +135,7 @@ mleSim <-
       phat = sapply(1:samplesize, function(x){
         lik=g(p,R, includeCompleteData = incComplete);
         if(m>=d/2){
-          weaver.vanilla(lik$a,lik$b,t(lik$De))$x
+          WeaverBas(lik$a,lik$b,t(lik$De))$x
         }else{
           Weaver(lik$a,lik$b,t(lik$De))$x
         }
@@ -348,7 +348,7 @@ function(){
   for(i in 1:50){s = (i-1)*2+1; De[c(s,s+1),i]=1}
   for(i in 51:99){s = (i-51)*2+2; De[c(s,s+1),i]=1}
   De[100,99] = 1
-  weaver.bayes(a,b,t(De),tol=1e-15, maxit=10000, iteration=T)->res
+  WeaverBayes(a,b,t(De),tol=1e-15, maxit=10000, iteration=T)->res
   
   layout(matrix(c(1,1,1,2,2,3), 2, 3, byrow = TRUE))
   par(mar=c(2.4,2.7,2.4,1.5))
@@ -370,7 +370,7 @@ function(){
   a = c(2,2,2)
   b = 4
   De = c(1,1,0)
-  it = weaver.vanilla(a,b,t(De),iteration=T)
+  it = WeaverBas(a,b,t(De),iteration=T)
   par(mfrow=c(1,3))
   
   plot(it$iter$path[1:5,1]*10,it$iter$path[1:5,2]*10,type='p',cex=1,pch=19, xlab=expression(x[1]),ylab=expression(x[2]))
@@ -435,32 +435,6 @@ sim_concreteExampleFixedPartition <-
   }
 
 
-oim <-
-  function(p,a,b,De){
-    d = length(p)
-    q = length(b)
-    J = cbind(diag(rep(1,d-1)),rep(-1,d-1))
-    dDe = J %*% De
-    tDep2 = as.vector((t(De) %*% as.vector(p)))^2
-    psi = matrix(double((d-1)^2),nrow=d-1)
-    for(i in 1:(d-1)){
-      for(k in i:(d-1)){
-        psi[i,k] = sum(b * dDe[i,] * dDe[k,] / tDep2)
-        if(i != k) psi[k,i] = psi[i,k]
-      }
-    }
-    diag((a / (p^2))[-d]) + a[d] / (p[d]^2) + psi
-  }
-
-covMLE <-
-  function(p,a,b,De){
-    covExLast <- solve(oim(p,a,b,De))
-    covOfLast <- as.vector(-apply(covExLast,1,sum))
-    varOfLast <- sum(covExLast)
-    covMLE <- rbind(cbind(covExLast,covOfLast),cbind(t(covOfLast),varOfLast))
-    dimnames(covMLE) <- NULL
-    covMLE
-  }
 
 coverage <-
   function(n){
@@ -504,7 +478,7 @@ sim_concreteExampleFixedPartitionNoCompleteDataUnindentifiable <-
     De = matrix(c(1,1,1,0,0,0,0,0,0,1,1,1,1,0,0,1,0,0,0,1,0,0,1,0,0,0,1,0,0,1),nrow=6)
     
     cl <- makeSOCKcluster(rep("localhost",12))
-    clusterExport(cl, list("p","p2","p3","p4","p5","ssize2","ssize3","ssize4","ssize5","De","Weaver","weaver.vanilla","weaver.bayes","weaver.greedy","cl","oim","covMLE"),envir=environment())
+    clusterExport(cl, list("p","p2","p3","p4","p5","ssize2","ssize3","ssize4","ssize5","De","Weaver","WeaverBas","WeaverBayes","WeaverGre","cl","oim","covMLE"),envir=environment())
     res = parLapply(cl, 1:n, function(x){
       x2 = as.vector(table(sample(x=c("123","456"),prob = p2, replace = T, size = ssize2)))
       x3 = as.vector(table(sample(x=c("14","25","36"),prob = p3, replace = T, size = ssize3)))
@@ -558,7 +532,7 @@ sim_concreteExampleFixedPartitionNoCompleteDataModif1 <-
     De = matrix(c(c(1,1,1,0,0,0,0,0,0,1,1,1,1,0,0,1,0,0,0,1,0,0,1,0,0,0,1,0,0,1),c(0,1,0,0,0,1,0,0,1,0,1,0,0,1,1,0,1,1)),nrow=6)
     
     cl <- makeSOCKcluster(rep("localhost",12))
-    clusterExport(cl, list("p","p2","p3","p4","p5","ssize2","ssize3","ssize4","ssize5","De","Weaver","weaver.vanilla","weaver.bayes","weaver.greedy","cl","oim","covMLE"),envir=environment())
+    clusterExport(cl, list("p","p2","p3","p4","p5","ssize2","ssize3","ssize4","ssize5","De","Weaver","WeaverBas","WeaverBayes","WeaverGre","cl","oim","covMLE"),envir=environment())
     res = parLapply(cl, 1:n, function(x){
       x2 = as.vector(table(sample(x=c("123","456"),prob = p2, replace = T, size = ssize2)))
       x3 = as.vector(table(sample(x=c("14","25","36"),prob = p3, replace = T, size = ssize3)))
@@ -616,7 +590,7 @@ sim_concreteExampleFixedPartitionNoCompleteDataModif2 <-
     De = matrix(c(c(1,1,1,0,0,0,0,0,0,1,1,1,1,0,0,1,0,0,0,1,0,0,1,0,0,0,1,0,0,1),c(0,1,0,0,0,1,0,0,1,0,1,0,0,1,1,0,1,1),c(1,0,0,0,1,0,0,1,0,1,0,0,1,1,0,1,1,0)),nrow=6)
     
     cl <- makeSOCKcluster(rep("localhost",12))
-    clusterExport(cl, list("p","p2","p3","p4","p5","p6","ssize2","ssize3","ssize4","ssize5","ssize6","De","Weaver","weaver.vanilla","weaver.bayes","weaver.greedy","cl","oim","covMLE"),envir=environment())
+    clusterExport(cl, list("p","p2","p3","p4","p5","p6","ssize2","ssize3","ssize4","ssize5","ssize6","De","Weaver","WeaverBas","WeaverBayes","WeaverGre","cl","oim","covMLE"),envir=environment())
     res = parLapply(cl, 1:n, function(x){
       x2 = as.vector(table(sample(x=c("123","456"),prob = p2, replace = T, size = ssize2)))
       x3 = as.vector(table(sample(x=c("14","25","36"),prob = p3, replace = T, size = ssize3)))

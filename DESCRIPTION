@@ -1,10 +1,9 @@
-Package: packageName
-Version: 0.0-0
-Title: Package Title
-Author: FirstName LastName <emailName@some.domain.net>
-Maintainer: FirstName LastName <emailName@some.domain.net>
+Package: imultinom
+Version: 0.1-0
+Title: The Incomplete Multinomial Distribution
+Author: Fanghu Dong <easttiger@gmail.com>
+Maintainer: Fanghu Dong <easttiger@gmail.com>
 Description: Package Description
 License: licenseInfo
-Depends: R (>= 2.13.1), packageNames
+Depends: R (>= 3.0.0), c("base","stats")
 Imports: packageNames
-

@@ -23,7 +23,7 @@ function(txt="http://sites.stat.psu.edu/~dhunter/code/btmatlab/nascar2002.txt",h
 		ib = ib + nsize;
 	}
 	rslt$a = drop(a);
-	rslt$tDe = tDe;
+	rslt$De = t(tDe);
 	rslt
 }
 
@@ -43,5 +43,5 @@ function(n = 9){
   b = b[idb];
   tDe = tDe[idb,];
   
-  list(a=a,b=b,tDe=tDe)
+  list(a=a,b=b,De=t(tDe))
 }
