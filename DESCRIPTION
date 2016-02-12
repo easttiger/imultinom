@@ -5,4 +5,5 @@ Author: Fanghu Dong <easttiger@gmail.com>
 Maintainer: Fanghu Dong <easttiger@gmail.com>
 Description: Package Description
 License: licenseInfo
-Depends: R (>= 3.0.0)
+Depends:
+    R (>= 3.0.0)
