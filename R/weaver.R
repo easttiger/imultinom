@@ -67,8 +67,12 @@ function(a,b,tDe,listinput, tol=1e-10,maxit=500,iteration=FALSE,ini=-1){
 
 
     xnew = xnew / sum(xnew);
-    e = sqrt(sum((a - x / sum(x) * drop(t(tau0 + t(tau) %*% (1L - tDe))))^2));
-    #e = sum(abs(x - xnew)) #another error function
+    if(iteration){
+      sse = sqrt(sum((a - x / sum(x) * drop(t(tau0 + t(tau) %*% (1L - tDe))))^2));
+      iter$sse = c(iter$sse, sse)
+    }
+
+    e = sum(abs(x - xnew)) #another error function
     x = xnew
 
     if(iterCount > maxit){
@@ -135,18 +139,18 @@ function(a,b,tDe,listinput,PriorThickness=0,tol=1e-10, maxit=10000,iteration=FAL
     if(iteration){
       lnLikOffset = -sum(x * PriorThickness * log(x))
       if(length(iter) == 0){
-        iter=list(path=xnew$iter$path,lnLik=xnew$iter$lnLik + lnLikOffset);
+        iter=list(path=xnew$x, fullpath=xnew$iter$path,lnLik=xnew$iter$lnLik[length(xnew$iter$lnLik)]+ lnLikOffset, fulllnLik=xnew$iter$lnLik + lnLikOffset, sse=sse(xnew$x, a, b, tDe));
       }else{
-        iter$path = rbind(iter$path, xnew$iter$path);
-        iter$lnLik = c(iter$lnLik, xnew$iter$lnLik + lnLikOffset);
+        iter$path = rbind(iter$path,xnew$x)
+        iter$fullpath = rbind(iter$fullpath, xnew$iter$path);
+        iter$fulllnLik = c(iter$fulllnLik, xnew$iter$lnLik + lnLikOffset);
+        iter$lnLik = c(iter$lnLik, iter$fulllnLik[length(iter$fulllnLik)])
+        iter$sse = c(iter$sse, sse(xnew$x, a, b, tDe))
       }
 
     }
     xnew = xnew$x;
     stopifnot(all(xnew >= 0));
-    #tau = b / (tDe %*% xnew)
-    #tau0 = sum(a) + sum(b) - sum(tau)
-    #e = sqrt(sum((xnew * drop(tau0 + t(tau) %*% (1L - tDe)))^2))
     e = sum(abs(x - xnew))
 
     x = sapply(xnew, function(x)max(x,1e-16))
@@ -232,6 +236,10 @@ function(a,b,tDe,listinput,tol=1e-10,maxit=500,iteration=FALSE,ini=-1){
     stopifnot(all(xnew >= 0));
 
     x = xnew;
+    if(iteration){
+      sse = sqrt(sum((a - x / sum(x) * drop(t(tau0 + t(tau) %*% (1L - tDe))))^2));
+      iter$sse = c(iter$sse, sse)
+    }
     if(iterCount > maxit){
       warning("maxit reached");
     }
@@ -303,4 +311,11 @@ function(p,a,b,De){
 	cov.of.mle <- rbind(cbind(covExLast,covOfLast),cbind(t(covOfLast),varOfLast))
 	dimnames(cov.of.mle) <- NULL
 	cov.of.mle
+}
+
+sse <-
+function(x,a,b,tDe){
+  tau = b / (tDe %*% x);
+  tau0 = sum(a) + sum(b) - sum(tau)
+  sqrt(sum((a - x / sum(x) * drop(t(tau0 + t(tau) %*% (1L - tDe))))^2))
 }

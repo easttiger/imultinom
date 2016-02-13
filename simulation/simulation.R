@@ -1,3 +1,4 @@
+set.seed(1)
 #configure parallel mode
 options(run_parallel = T)
 NCORES = as.integer(Sys.getenv("NUMBER_OF_PROCESSORS"))
@@ -65,6 +66,7 @@ sim_concreteExampleFixedPartition <-
 
 coverage.probability <-
   function(n) {
+    set.seed(1)
     #best n=12000
     proba = seq(1.0 / n,1.0,1.0 / n)
     y = sim_concreteExampleFixedPartition(n)
@@ -87,6 +89,8 @@ coverage.probability <-
     abline(a=0,b=1,col=2)
     par(mfrow = c(4,3))
     par(cex.axis=0.8)
+    par(mar=c(2.5,2.1,1.3,0.8))
+    par(mgp=c(1.4,0.5,0))
     for (i in 1:6) {
       plot(
         proba,sapply(proba, function(x) {
@@ -99,7 +103,7 @@ coverage.probability <-
       )
       abline(a=0,b=1,col=2)
     }
-    par(cex.axis=0.8)
+
     for (i in 1:6) {
       x = phat[i,]
       hist(
@@ -115,10 +119,18 @@ coverage.probability <-
     }
   }
 
-f1 <-
-  function() {
-    tryCatch(
-      y = sim_concreteExampleFixedPartition(60000), error = function(e)
-        f1()
-    )
-  }
+get.mean.covphat <-
+function(folder="E:/Dropbox/GitHub/imultinom/simulation/results/"){
+  load(paste(folder,"sim_concreteExampleFixedPartition(60000)_2016-02-10_02.35.33.rda", sep=""))
+  s = Reduce("+", lapply(res, function(x){x$covphat}))
+  se = Reduce("+", lapply(res, function(x){x$sdphat}))
+  n = length(res)
+  rm(res)
+  load(paste(folder,"sim_concreteExampleFixedPartition(60000)_2016-02-10_02.54.32.rda", sep=""))
+  s = Reduce("+", lapply(res, function(x){x$covphat}), s)
+  se = Reduce("+", lapply(res, function(x){x$sdphat}), se)
+  n = n + length(res)
+  rm(res)
+  list(mean.cov = s / n, mean.se = se / n)
+
+}
